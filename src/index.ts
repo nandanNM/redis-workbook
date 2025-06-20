@@ -1,9 +1,13 @@
 import express from "express";
+import "dotenv/config";
 import axios from "axios";
-
-const PORT = 3000;
+import Redis from "ioredis";
+const PORT = process.env.PORT ?? 8000;
 const app = express();
-
+const redis = new Redis({
+  host: "localhost",
+  port: Number(6379),
+});
 app.use(express.json());
 interface CacheStore {
   totalPageCount?: number;
@@ -12,8 +16,9 @@ const cacheStore: CacheStore = {};
 app.get("/books/total", async (req, res) => {
   try {
     // Check if the totalPageCount is already cached
-    if ("totalPageCount" in cacheStore) {
-      return res.json({ totalPageCount: cacheStore.totalPageCount });
+    const cachedValue = await redis.get("totalPageValue");
+    if (cachedValue) {
+      return res.json({ totalPageCount: Number(cachedValue) });
     }
     const response = await axios.get(
       "https://api.freeapi.app/api/v1/public/books"
@@ -24,7 +29,8 @@ app.get("/books/total", async (req, res) => {
       0
     );
     // Cache the totalPageCount
-    cacheStore["totalPageCount"] = totalPageCount;
+    // cacheStore["totalPageCount"] = totalPageCount;
+    await redis.set("totalPageValue", JSON.stringify(totalPageCount)); // Cache for 1 hour
     res.json({ totalPageCount });
   } catch (error) {
     console.error("Error fetching data:", error);
