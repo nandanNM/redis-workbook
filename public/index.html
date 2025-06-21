@@ -6,9 +6,29 @@
     <title>Socket</title>
   </head>
   <body>
+    <div>
+      <input id="massage-input" type="text" />
+      <button id="submit-button">Submit</button>
+    </div>
+    <div id="messages"></div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
+      const input = document.getElementById("massage-input");
+      const button = document.getElementById("submit-button");
+      const chatDiv = document.getElementById("messages");
+      button.addEventListener("click", () => {
+        if (!input.value) return;
+        socket.emit("chat-message", input.value);
+        input.value = "";
+      });
+      socket.on("server-message", (msg) => {
+        console.log(msg);
+        const item = document.createElement("li");
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
     </script>
   </body>
 </html>

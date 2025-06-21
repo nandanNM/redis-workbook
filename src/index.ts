@@ -27,7 +27,7 @@ app.use(async (req, res, next) => {
     await redis.set(key, 0);
     await redis.expire(key, 60); // Set expiration to 60 seconds
   }
-  if (Number(value) >= 10) {
+  if (Number(value) >= 100) {
     return res.status(429).send("Rate limit exceeded. Try again later.");
   }
   await redis.incr(key);
@@ -36,6 +36,9 @@ app.use(async (req, res, next) => {
 
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket.id}`);
+  socket.on("chat-message", (msg) => {
+    io.emit("server-message", msg);
+  });
 });
 
 app.use(express.static("./public"));
